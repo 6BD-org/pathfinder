@@ -39,3 +39,9 @@ kubebuilder create api --group pathfinder --version v1 PathFinder
 Customize spec.
 
 Spec holds the desired state of a resource, in this case, we do not desire anything, but maintain a list of services.
+
+
+Build image 
+```bash
+make docker-build docker-push IMG=172.16.1.99/tmp/pathfinder:test
+```

@@ -1,6 +1,11 @@
 # Build the manager binary
 FROM golang:1.13 as builder
 
+ENV http_proxy "http://172.16.2.16:3128"
+ENV https_proxy "http://172.16.2.16:3128"
+ENV HTTP_PROXY "http://172.16.2.16:3128"
+ENV HTTPS_PROXY "http://172.16.2.16:3128"
+
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
