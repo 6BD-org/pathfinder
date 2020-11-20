@@ -1,0 +1,7 @@
+apiVersion: pathfinder.xmbsmdsj.com/v1
+kind: PathFinder
+metadata:
+  name: pathfinder-sample
+spec:
+  # Add fields here
+  foo: bar

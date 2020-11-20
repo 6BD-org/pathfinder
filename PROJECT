@@ -1,0 +1,7 @@
+domain: xmbsmdsj.com
+repo: github.com/wylswz/native-discovery
+resources:
+- group: pathfinder
+  kind: PathFinder
+  version: v1
+version: "2"
