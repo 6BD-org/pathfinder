@@ -21,10 +21,28 @@ import (
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	pathfinderv1 "github.com/wylswz/native-discovery/api/v1"
+	"github.com/wylswz/native-discovery/k8s"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// PathFinderAnnotationKey should present if a service need pathfinder discovery feature
+	PathFinderAnnotationKey = "XM-PathFinder-Service"
+
+	// PathFinderActivated indicates that this service is ready for discovery
+	PathFinderActivated = "Activated"
+
+	// PathFinderDeactiveted indicates that this service is hidden from discovery
+	PathFinderDeactiveted = "Deactivated"
+
+	PathFinderRegionKey = "XM-PathFinder-Region"
+
+	PathFinderDefaultRegion = "DEFAULT"
 )
 
 // PathFinderReconciler reconciles a PathFinder object
@@ -37,12 +55,25 @@ type PathFinderReconciler struct {
 // +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders/status,verbs=get;update;patch
 
+// Reconcile is the main logic of interpreting PathFinder CRDs
 func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("pathfinder", req.NamespacedName)
 
-	// your logic here
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err)
+	}
 
+	clientSet := k8s.ClientSet(config)
+	serviceList, err := clientSet.CoreV1().Services(req.Namespace).List(metav1.ListOptions{})
+	for _, s := range serviceList.Items {
+		annotations := s.Annotations
+		pathFinderState, ok := annotations[PathFinderAnnotationKey]
+		if ok && pathFinderState == PathFinderActivated {
+
+		}
+	}
 	return ctrl.Result{}, nil
 }
 

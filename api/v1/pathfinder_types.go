@@ -23,13 +23,32 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// PayloadKeyValPair organizes extra service information as key-value pairs
+type PayloadKeyValPair struct {
+	Key string `json:"key"`
+	Val string `json:"val"`
+}
+
+// Payload carries extra information of a service
+type Payload struct {
+	KeyValPairs []PayloadKeyValPair `json:"keyValPairs"`
+}
+
+// ServiceEntry is one single entry for a service, which may contain multiple hosts
+type ServiceEntry struct {
+	ServiceName  string   `json:"serviceName,omitempty"`
+	ServiceHosts []string `json:"serviceHosts"`
+	Payload      Payload  `json:"payload"`
+}
+
 // PathFinderSpec defines the desired state of PathFinder
 type PathFinderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of PathFinder. Edit PathFinder_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	ServiceEntries []ServiceEntry `json:"serviceEntries,omitempty"`
+	ClusterDomain  string         `json:"clusterDomain,omitempty"`
 }
 
 // PathFinderStatus defines the observed state of PathFinder
