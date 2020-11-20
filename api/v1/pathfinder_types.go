@@ -49,6 +49,7 @@ type PathFinderSpec struct {
 	// Foo is an example field of PathFinder. Edit PathFinder_types.go to remove/update
 	ServiceEntries []ServiceEntry `json:"serviceEntries,omitempty"`
 	ClusterDomain  string         `json:"clusterDomain,omitempty"`
+	Region         string         `json:"region"`
 }
 
 // PathFinderStatus defines the observed state of PathFinder
@@ -75,6 +76,16 @@ type PathFinderList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []PathFinder `json:"items"`
+}
+
+// FindServiceEntry find service entry by name, if not found, second returned val
+func (spec PathFinderSpec) FindServiceEntry(name string) (ServiceEntry, bool) {
+	for _, entry := range spec.ServiceEntries {
+		if entry.ServiceName == name {
+			return entry, true
+		}
+	}
+	return ServiceEntry{}, false
 }
 
 func init() {
