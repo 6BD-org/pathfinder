@@ -85,10 +85,10 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 				if ok {
 					if !reflect.DeepEqual(entry.ServiceHosts, []string{BuildUrlFromService(&s)}) {
 						entry.ServiceHosts = []string{BuildUrlFromService(&s)}
-						r.Log.Info("Updating service for: ", entry.ServiceName)
+						r.Log.Info("Updating service", "service", entry.ServiceName)
 					} else {
 						// No change happens to this entry
-						r.Log.Info("Service unchanged: ", entry.ServiceName)
+						r.Log.Info("Service unchanged: ", "service", entry.ServiceName)
 						continue
 					}
 
@@ -96,14 +96,20 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 
 				} else {
 					// Add a new Service entry
-					r.Log.Info("Appending service for: ", entry.ServiceName)
+					r.Log.Info("Appending service: s", "service", serviceName)
 					pathFinderRegion.Spec.ServiceEntries = append(
 						pathFinderRegion.Spec.ServiceEntries,
-						v1.ServiceEntry{ServiceName: serviceName, ServiceHosts: []string{BuildUrlFromService(&s)}},
+						v1.ServiceEntry{
+							ServiceName:  serviceName,
+							ServiceHosts: []string{BuildUrlFromService(&s)},
+						},
 					)
 				}
 				r.Log.Info("Updating pathfinder")
-				r.Update(context.TODO(), pathFinderRegion)
+				err = r.Update(context.TODO(), pathFinderRegion)
+				if err != nil {
+					r.Log.Error(err, "Error updating")
+				}
 			}
 		}
 

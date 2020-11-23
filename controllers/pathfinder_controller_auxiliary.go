@@ -12,7 +12,7 @@ import (
 
 func (r *PathFinderReconciler) GetPathFinderRegion(namespace string, region string) (*v1.PathFinder, error) {
 	pl := v1.PathFinderList{}
-	if err := r.List(context.TODO(), &pl, client.MatchingFields{".spec.region": region}); err != nil {
+	if err := r.List(context.TODO(), &pl, client.InNamespace(namespace)); err != nil {
 		return nil, err
 	}
 	if len(pl.Items) > 1 {
@@ -21,7 +21,12 @@ func (r *PathFinderReconciler) GetPathFinderRegion(namespace string, region stri
 	if len(pl.Items) < 1 {
 		return nil, errors.Errorf("Not found")
 	}
-	return &pl.Items[0], nil
+	for _, pf := range pl.Items {
+		if pf.Spec.Region == region {
+			return &pf, nil
+		}
+	}
+	return nil, errors.Errorf("Not found")
 
 }
 

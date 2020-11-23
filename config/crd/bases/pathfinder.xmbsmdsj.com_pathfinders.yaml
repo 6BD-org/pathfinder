@@ -57,13 +57,8 @@ spec:
                               type: string
                             val:
                               type: string
-                          required:
-                          - key
-                          - val
                           type: object
                         type: array
-                    required:
-                    - keyValPairs
                     type: object
                   serviceHosts:
                     items:
@@ -72,8 +67,8 @@ spec:
                   serviceName:
                     type: string
                 required:
-                - payload
                 - serviceHosts
+                - serviceName
                 type: object
               type: array
           required:
