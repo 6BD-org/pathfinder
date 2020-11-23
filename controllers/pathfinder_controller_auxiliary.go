@@ -18,7 +18,9 @@ func (r *PathFinderReconciler) GetPathFinderRegion(namespace string, region stri
 	if len(pl.Items) > 1 {
 		return nil, errors.Errorf("Dup")
 	}
-
+	if len(pl.Items) < 1 {
+		return nil, errors.Errorf("Not found")
+	}
 	return &pl.Items[0], nil
 
 }
@@ -29,6 +31,13 @@ func (r *PathFinderReconciler) GetDefaultPathFinderRegion(namespace string) *v1.
 		r.Log.Error(err, "Error Getting default region")
 	}
 	return p
+}
+
+func (r *PathFinderReconciler) ListServices(namespace string) *corev1.ServiceList {
+
+	services := corev1.ServiceList{}
+	r.Client.List(context.TODO(), &services, &client.ListOptions{})
+	return &services
 }
 
 func BuildUrlFromService(service *corev1.Service) string {

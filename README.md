@@ -43,5 +43,14 @@ Spec holds the desired state of a resource, in this case, we do not desire anyth
 
 Build image 
 ```bash
-make docker-build docker-push IMG=172.16.1.99/tmp/pathfinder:test
+make docker-build docker-push IMG={your_image}
 ```
+
+Deploy the controller to kubernetes:
+
+```bash
+make deploy IMG={your_image}
+
+```
+
+After that, you can deploy path finder in namespace to make it work
