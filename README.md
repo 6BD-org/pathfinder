@@ -54,3 +54,47 @@ make deploy IMG={your_image}
 ```
 
 After that, you can deploy path finder in namespace to make it work
+
+
+## How to use? 
+
+### Step 1: Deploy CRD to your cluster
+
+```
+kubectl apply -f ./config/crd/bases/pathfinder.xmbsmdsj.com_pathfinders.yaml
+```
+
+### Step 2: Build image for pathfinder controller
+
+Already introduced above
+
+### Step 3: Deploy controller on cluster
+
+Already introduced above
+
+### Step 4: Deploy PathFinder in your namespace
+
+```bash
+
+kubectl -n your_ns apply -f ./config/samples/pathfinder_v1_pathfinder.yaml
+
+```
+
+### Step 5: Setup region for your pathfinder
+
+Just modify the `region` value in `Pathfinder`'s `spec`
+
+### Step N: Make your service discoverable
+
+In order to make service discoverable, you only need to add a few annotations to service object, like this
+
+```yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    XM-PathFinder-Region: some-region # Region must match existing path-finder's region
+    XM-PathFinder-Service: Activated
+    XM-PathFinder-ServiceName: my-svc
+```
