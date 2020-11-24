@@ -25,20 +25,20 @@ import (
 
 // PayloadKeyValPair organizes extra service information as key-value pairs
 type PayloadKeyValPair struct {
-	Key string `json:"key,omitempty"`
-	Val string `json:"val,omitempty"`
+	Key string `json:"key"`
+	Val string `json:"val"`
 }
 
 // Payload carries extra information of a service
 type Payload struct {
-	KeyValPairs []PayloadKeyValPair `json:"keyValPairs,omitempty"`
+	KeyValPairs []PayloadKeyValPair `json:"keyValPairs"`
 }
 
 // ServiceEntry is one single entry for a service, which may contain multiple hosts
 type ServiceEntry struct {
-	ServiceName  string   `json:"serviceName"`
-	ServiceHosts []string `json:"serviceHosts"`
-	Payload      Payload  `json:"payload,omitempty"`
+	ServiceName string  `json:"serviceName"`
+	ServiceHost string  `json:"serviceHosts"`
+	Payload     Payload `json:"payload,omitempty"`
 }
 
 // PathFinderSpec defines the desired state of PathFinder

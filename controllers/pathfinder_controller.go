@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +27,7 @@ import (
 
 	v1 "github.com/wylswz/native-discovery/api/v1"
 	"github.com/wylswz/native-discovery/messages"
+	"github.com/wylswz/native-discovery/utils"
 )
 
 const (
@@ -69,52 +69,43 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		if ok && pathFinderState == PathFinderActivated {
 			region, ok := annotations[PathFinderRegionKey]
 			if !ok {
-				r.Log.Error(nil, messages.RegionUnspecified)
-				//return ctrl.Result{}, errors.Errorf(messages.RegionUnspecified)
+				r.Log.Info("Region unspecified, will use default", "service", s.Name, "namespace", s.Namespace)
+				region = PathFinderDefaultRegion
 			}
-			serviceName, ok := annotations[PathFinderServiceRegistrationNameKey]
+			_, ok = annotations[PathFinderServiceRegistrationNameKey]
 			if !ok {
 				r.Log.Error(nil, messages.ServiceNameUnspecified)
-				//return ctrl.Result{}, errors.Errorf(messages.ServiceNameUnspecified)
 			}
 			pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
-			if err == nil {
+			if err != nil {
+				r.Log.Error(err, "Unable to find region")
+			} else {
+
 				// Do registrations
-
-				entry, ok := pathFinderRegion.Spec.FindServiceEntry(serviceName)
-				if ok {
-					if !reflect.DeepEqual(entry.ServiceHosts, []string{BuildUrlFromService(&s)}) {
-						entry.ServiceHosts = []string{BuildUrlFromService(&s)}
-						r.Log.Info("Updating service", "service", entry.ServiceName)
-					} else {
-						// No change happens to this entry
-						r.Log.Info("Service unchanged: ", "service", entry.ServiceName)
-						continue
-					}
-
-					// TODO: Add payload
-
-				} else {
-					// Add a new Service entry
-					r.Log.Info("Appending service: s", "service", serviceName)
-					pathFinderRegion.Spec.ServiceEntries = append(
-						pathFinderRegion.Spec.ServiceEntries,
-						v1.ServiceEntry{
-							ServiceName:  serviceName,
-							ServiceHosts: []string{BuildUrlFromService(&s)},
-						},
-					)
-				}
+				r.UpdatePathFinderWithService(pathFinderRegion, &s)
 				r.Log.Info("Updating pathfinder")
 				err = r.Update(context.TODO(), pathFinderRegion)
-				if err != nil {
-					r.Log.Error(err, "Error updating")
-				}
+
+				utils.CheckErr(err, "Error updating", r.Log)
 			}
+
 		}
 
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *PathFinderReconciler) CheckDefaultRegion(req ctrl.Request) {
+	ns := req.Namespace
+	_, err := r.GetDefaultPathFinderRegion(ns)
+	if err != nil {
+		// Default region does not exists, create one
+		pf := v1.PathFinder{}
+		pf.Spec.Region = PathFinderDefaultRegion
+		pf.ObjectMeta.Name = "pathfinder-default"
+		pf.ObjectMeta.Namespace = req.Namespace
+		r.Client.Create(context.TODO(), &pf, &client.CreateOptions{})
+	}
 }
 
 func (r *PathFinderReconciler) SetupWithManager(mgr ctrl.Manager) error {
