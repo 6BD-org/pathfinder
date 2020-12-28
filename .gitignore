@@ -22,3 +22,6 @@ bin
 *.swp
 *.swo
 *~
+tmp/
+*.tar.gz
+kubebuilder

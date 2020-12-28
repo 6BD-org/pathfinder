@@ -47,15 +47,15 @@ type PathFinderSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of PathFinder. Edit PathFinder_types.go to remove/update
-	ServiceEntries []ServiceEntry `json:"serviceEntries,omitempty"`
-	ClusterDomain  string         `json:"clusterDomain,omitempty"`
-	Region         string         `json:"region"`
+	ClusterDomain string `json:"clusterDomain,omitempty"`
+	Region        string `json:"region"`
 }
 
 // PathFinderStatus defines the observed state of PathFinder
 type PathFinderStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	ServiceEntries []ServiceEntry `json:"serviceEntries,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -79,8 +79,8 @@ type PathFinderList struct {
 }
 
 // FindServiceEntry find service entry by name, if not found, second returned val
-func (spec PathFinderSpec) FindServiceEntry(name string) (ServiceEntry, bool) {
-	for _, entry := range spec.ServiceEntries {
+func (status PathFinderStatus) FindServiceEntry(name string) (ServiceEntry, bool) {
+	for _, entry := range status.ServiceEntries {
 		if entry.ServiceName == name {
 			return entry, true
 		}

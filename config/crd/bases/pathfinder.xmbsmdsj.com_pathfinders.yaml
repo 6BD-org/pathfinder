@@ -35,12 +35,21 @@ spec:
           description: PathFinderSpec defines the desired state of PathFinder
           properties:
             clusterDomain:
+              description: Foo is an example field of PathFinder. Edit PathFinder_types.go
+                to remove/update
               type: string
             region:
               type: string
+          required:
+          - region
+          type: object
+        status:
+          description: PathFinderStatus defines the observed state of PathFinder
+          properties:
             serviceEntries:
-              description: Foo is an example field of PathFinder. Edit PathFinder_types.go
-                to remove/update
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "make" to regenerate code after modifying
+                this file'
               items:
                 description: ServiceEntry is one single entry for a service, which
                   may contain multiple hosts
@@ -74,11 +83,6 @@ spec:
                 - serviceName
                 type: object
               type: array
-          required:
-          - region
-          type: object
-        status:
-          description: PathFinderStatus defines the observed state of PathFinder
           type: object
       type: object
   version: v1

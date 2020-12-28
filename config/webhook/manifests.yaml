@@ -1,0 +1,52 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-pathfinder-xmbsmdsj-com-v1-pathfinder
+  failurePolicy: Fail
+  name: mpathfinder.kb.io
+  rules:
+  - apiGroups:
+    - pathfinder.xmbsmdsj.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pathfinders
+
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-pathfinder-xmbsmdsj-com-v1-pathfinder
+  failurePolicy: Fail
+  name: vpathfinder.kb.io
+  rules:
+  - apiGroups:
+    - pathfinder.xmbsmdsj.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pathfinders

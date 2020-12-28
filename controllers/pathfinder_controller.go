@@ -109,6 +109,10 @@ func (r *PathFinderReconciler) CheckDefaultRegion(req ctrl.Request) {
 }
 
 func (r *PathFinderReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	err := ctrl.NewControllerManagedBy(mgr).For(&v1.PathFinder{}).Complete(r)
+	if err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Service{}).
 		Complete(r)
