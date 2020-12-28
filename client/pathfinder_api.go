@@ -11,6 +11,7 @@ import (
 type PathFinderV1 interface {
 	Create(ctx context.Context, pathfinder *v1.PathFinder, opts client.CreateOption) error
 	Delete(ctx context.Context, pathfinder *v1.PathFinder, opts client.DeleteOption) error
+	List(ctx context.Context, pathfinderList *v1.PathFinderList) error
 }
 
 type PathFinderV1Impl struct {
@@ -27,6 +28,10 @@ func (pfv1 PathFinderV1Impl) Create(ctx context.Context, pathfinder *v1.PathFind
 func (pfv1 PathFinderV1Impl) Delete(ctx context.Context, pathfinder *v1.PathFinder, opts client.DeleteOption) error {
 	return pfv1.client.Delete(ctx, pathfinder, opts)
 
+}
+
+func (pfv1 PathFinderV1Impl) List(ctx context.Context, pathfinderList *v1.PathFinderList) error {
+	return pfv1.client.List(ctx, pathfinderList, &client.ListOptions{})
 }
 
 func NewPathFinderV1(client client.Client, namespace string) PathFinderV1 {
