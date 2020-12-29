@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	pathfinderv1 "github.com/wylswz/native-discovery/api/v1"
+	pathfinderv1 "github.com/6BD-org/pathfinder/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 

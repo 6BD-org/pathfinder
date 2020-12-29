@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"reflect"
 
+	v1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/messages"
+	"github.com/6BD-org/pathfinder/utils"
 	"github.com/pkg/errors"
-	v1 "github.com/wylswz/native-discovery/api/v1"
-	"github.com/wylswz/native-discovery/messages"
-	"github.com/wylswz/native-discovery/utils"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

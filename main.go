@@ -26,8 +26,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	pathfinderv1 "github.com/wylswz/native-discovery/api/v1"
-	"github.com/wylswz/native-discovery/controllers"
+	pathfinderv1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

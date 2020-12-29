@@ -1,5 +1,5 @@
 domain: xmbsmdsj.com
-repo: github.com/wylswz/native-discovery
+repo: github.com/6BD-org/pathfinder
 resources:
 - group: pathfinder
   kind: PathFinder

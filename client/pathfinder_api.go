@@ -7,8 +7,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "github.com/wylswz/native-discovery/api/v1"
-	"github.com/wylswz/native-discovery/utils"
+	v1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/utils"
 )
 
 // PathFinderListOption inherates native options and region

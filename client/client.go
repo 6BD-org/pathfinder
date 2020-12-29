@@ -1,7 +1,7 @@
 package client
 
 import (
-	pathfinderv1 "github.com/wylswz/native-discovery/api/v1"
+	pathfinderv1 "github.com/6BD-org/pathfinder/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
