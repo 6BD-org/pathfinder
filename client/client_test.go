@@ -24,7 +24,7 @@ func Test(t *testing.T) {
 		return
 	}
 	pf := v1.PathFinderList{}
-	err = pfclient.PathFinderV1(testNs).List(context.TODO(), &pf)
+	err = pfclient.PathFinderV1(testNs).List(context.TODO(), &pf, PathFinderListOption{Region: "DEFAULT"})
 	if err != nil {
 		log.Println(err)
 	}

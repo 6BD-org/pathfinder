@@ -2,8 +2,8 @@ package utils
 
 import "reflect"
 
+// Filter out elements using predicates
 func Filter(l interface{}, predicate func(l interface{}) bool, t reflect.Type) []interface{} {
-
 	res := make([]interface{}, 0)
 	switch reflect.TypeOf(l).Kind() {
 	case reflect.Slice:
@@ -14,7 +14,5 @@ func Filter(l interface{}, predicate func(l interface{}) bool, t reflect.Type) [
 			}
 		}
 	}
-
 	return res
-
 }
