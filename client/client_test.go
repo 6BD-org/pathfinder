@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const config = "/root/.kube/config"
+const config = "/home/transwarp/.kube/config"
 const testNs = "makaveli"
 
 func Test(t *testing.T) {
@@ -24,7 +24,7 @@ func Test(t *testing.T) {
 		return
 	}
 	pf := v1.PathFinderList{}
-	err = pfclient.PathFinderV1(testNs).List(context.TODO(), &pf, PathFinderListOption{Region: "DEFAULT"})
+	err = pfclient.PathFinderV1(testNs).List(context.TODO(), &pf, PathFinderListOption{})
 	if err != nil {
 		log.Println(err)
 	}

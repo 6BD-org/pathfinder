@@ -122,33 +122,33 @@ type specificInformersMap struct {
 	namespace string
 }
 
-// Start calls Run on each of the informers and sets started to true.  Blocks on the context.
+// Start calls Run on each of the informers and sets started to true.  Blocks on the stop channel.
 // It doesn't return start because it can't return an error, and it's not a runnable directly.
-func (ip *specificInformersMap) Start(ctx context.Context) {
+func (ip *specificInformersMap) Start(stop <-chan struct{}) {
 	func() {
 		ip.mu.Lock()
 		defer ip.mu.Unlock()
 
 		// Set the stop channel so it can be passed to informers that are added later
-		ip.stop = ctx.Done()
+		ip.stop = stop
 
 		// Start each informer
 		for _, informer := range ip.informersByGVK {
-			go informer.Informer.Run(ctx.Done())
+			go informer.Informer.Run(stop)
 		}
 
 		// Set started to true so we immediately start any informers added later.
 		ip.started = true
 		close(ip.startWait)
 	}()
-	<-ctx.Done()
+	<-stop
 }
 
-func (ip *specificInformersMap) waitForStarted(ctx context.Context) bool {
+func (ip *specificInformersMap) waitForStarted(stop <-chan struct{}) bool {
 	select {
 	case <-ip.startWait:
 		return true
-	case <-ctx.Done():
+	case <-stop:
 		return false
 	}
 }
@@ -236,7 +236,7 @@ func createStructuredListWatch(gvk schema.GroupVersionKind, ip *specificInformer
 		return nil, err
 	}
 
-	client, err := apiutil.RESTClientForGVK(gvk, false, ip.config, ip.codecs)
+	client, err := apiutil.RESTClientForGVK(gvk, ip.config, ip.codecs)
 	if err != nil {
 		return nil, err
 	}

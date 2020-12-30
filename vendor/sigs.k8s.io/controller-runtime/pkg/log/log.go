@@ -39,6 +39,10 @@ import (
 	"github.com/go-logr/logr"
 )
 
+var (
+	contextKey = &struct{}{}
+)
+
 // SetLogger sets a concrete logging implementation for all deferred Loggers.
 func SetLogger(l logr.Logger) {
 	Log.Fulfill(l)
@@ -51,17 +55,19 @@ var Log = NewDelegatingLogger(NullLogger{})
 
 // FromContext returns a logger with predefined values from a context.Context.
 func FromContext(ctx context.Context, keysAndValues ...interface{}) logr.Logger {
-	var log logr.Logger = Log
-	if ctx != nil {
-		if logger := logr.FromContext(ctx); logger != nil {
-			log = logger
-		}
+	var log logr.Logger
+	if ctx == nil {
+		log = Log
+	} else {
+		lv := ctx.Value(contextKey)
+		log = lv.(logr.Logger)
 	}
-	return log.WithValues(keysAndValues...)
+	log.WithValues(keysAndValues...)
+	return log
 }
 
 // IntoContext takes a context and sets the logger as one of its keys.
 // Use FromContext function to retrieve the logger.
 func IntoContext(ctx context.Context, log logr.Logger) context.Context {
-	return logr.NewContext(ctx, log)
+	return context.WithValue(ctx, contextKey, log)
 }
