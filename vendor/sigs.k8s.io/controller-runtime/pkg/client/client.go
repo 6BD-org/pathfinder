@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
 
@@ -72,13 +71,11 @@ func New(config *rest.Config, options Options) (Client, error) {
 	}
 
 	clientcache := &clientCache{
-		config: config,
-		scheme: options.Scheme,
-		mapper: options.Mapper,
-		codecs: serializer.NewCodecFactory(options.Scheme),
-
-		structuredResourceByType:   make(map[schema.GroupVersionKind]*resourceMeta),
-		unstructuredResourceByType: make(map[schema.GroupVersionKind]*resourceMeta),
+		config:         config,
+		scheme:         options.Scheme,
+		mapper:         options.Mapper,
+		codecs:         serializer.NewCodecFactory(options.Scheme),
+		resourceByType: make(map[schema.GroupVersionKind]*resourceMeta),
 	}
 
 	rawMetaClient, err := metadata.NewForConfig(config)
@@ -99,8 +96,6 @@ func New(config *rest.Config, options Options) (Client, error) {
 			client:     rawMetaClient,
 			restMapper: options.Mapper,
 		},
-		scheme: options.Scheme,
-		mapper: options.Mapper,
 	}
 
 	return c, nil
@@ -114,8 +109,6 @@ type client struct {
 	typedClient        typedClient
 	unstructuredClient unstructuredClient
 	metadataClient     metadataClient
-	scheme             *runtime.Scheme
-	mapper             meta.RESTMapper
 }
 
 // resetGroupVersionKind is a helper function to restore and preserve GroupVersionKind on an object.
@@ -128,18 +121,8 @@ func (c *client) resetGroupVersionKind(obj runtime.Object, gvk schema.GroupVersi
 	}
 }
 
-// Scheme returns the scheme this client is using.
-func (c *client) Scheme() *runtime.Scheme {
-	return c.scheme
-}
-
-// RESTMapper returns the scheme this client is using.
-func (c *client) RESTMapper() meta.RESTMapper {
-	return c.mapper
-}
-
 // Create implements client.Client
-func (c *client) Create(ctx context.Context, obj Object, opts ...CreateOption) error {
+func (c *client) Create(ctx context.Context, obj runtime.Object, opts ...CreateOption) error {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
 		return c.unstructuredClient.Create(ctx, obj, opts...)
@@ -151,7 +134,7 @@ func (c *client) Create(ctx context.Context, obj Object, opts ...CreateOption) e
 }
 
 // Update implements client.Client
-func (c *client) Update(ctx context.Context, obj Object, opts ...UpdateOption) error {
+func (c *client) Update(ctx context.Context, obj runtime.Object, opts ...UpdateOption) error {
 	defer c.resetGroupVersionKind(obj, obj.GetObjectKind().GroupVersionKind())
 	switch obj.(type) {
 	case *unstructured.Unstructured:
@@ -164,7 +147,7 @@ func (c *client) Update(ctx context.Context, obj Object, opts ...UpdateOption) e
 }
 
 // Delete implements client.Client
-func (c *client) Delete(ctx context.Context, obj Object, opts ...DeleteOption) error {
+func (c *client) Delete(ctx context.Context, obj runtime.Object, opts ...DeleteOption) error {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
 		return c.unstructuredClient.Delete(ctx, obj, opts...)
@@ -176,7 +159,7 @@ func (c *client) Delete(ctx context.Context, obj Object, opts ...DeleteOption) e
 }
 
 // DeleteAllOf implements client.Client
-func (c *client) DeleteAllOf(ctx context.Context, obj Object, opts ...DeleteAllOfOption) error {
+func (c *client) DeleteAllOf(ctx context.Context, obj runtime.Object, opts ...DeleteAllOfOption) error {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
 		return c.unstructuredClient.DeleteAllOf(ctx, obj, opts...)
@@ -188,7 +171,7 @@ func (c *client) DeleteAllOf(ctx context.Context, obj Object, opts ...DeleteAllO
 }
 
 // Patch implements client.Client
-func (c *client) Patch(ctx context.Context, obj Object, patch Patch, opts ...PatchOption) error {
+func (c *client) Patch(ctx context.Context, obj runtime.Object, patch Patch, opts ...PatchOption) error {
 	defer c.resetGroupVersionKind(obj, obj.GetObjectKind().GroupVersionKind())
 	switch obj.(type) {
 	case *unstructured.Unstructured:
@@ -201,7 +184,7 @@ func (c *client) Patch(ctx context.Context, obj Object, patch Patch, opts ...Pat
 }
 
 // Get implements client.Client
-func (c *client) Get(ctx context.Context, key ObjectKey, obj Object) error {
+func (c *client) Get(ctx context.Context, key ObjectKey, obj runtime.Object) error {
 	switch obj.(type) {
 	case *unstructured.Unstructured:
 		return c.unstructuredClient.Get(ctx, key, obj)
@@ -213,9 +196,9 @@ func (c *client) Get(ctx context.Context, key ObjectKey, obj Object) error {
 }
 
 // List implements client.Client
-func (c *client) List(ctx context.Context, obj ObjectList, opts ...ListOption) error {
+func (c *client) List(ctx context.Context, obj runtime.Object, opts ...ListOption) error {
 	switch obj.(type) {
-	case *unstructured.UnstructuredList:
+	case *unstructured.Unstructured:
 		return c.unstructuredClient.List(ctx, obj, opts...)
 	case *metav1.PartialObjectMetadataList:
 		return c.metadataClient.List(ctx, obj, opts...)
@@ -238,7 +221,7 @@ type statusWriter struct {
 var _ StatusWriter = &statusWriter{}
 
 // Update implements client.StatusWriter
-func (sw *statusWriter) Update(ctx context.Context, obj Object, opts ...UpdateOption) error {
+func (sw *statusWriter) Update(ctx context.Context, obj runtime.Object, opts ...UpdateOption) error {
 	defer sw.client.resetGroupVersionKind(obj, obj.GetObjectKind().GroupVersionKind())
 	switch obj.(type) {
 	case *unstructured.Unstructured:
@@ -251,7 +234,7 @@ func (sw *statusWriter) Update(ctx context.Context, obj Object, opts ...UpdateOp
 }
 
 // Patch implements client.Client
-func (sw *statusWriter) Patch(ctx context.Context, obj Object, patch Patch, opts ...PatchOption) error {
+func (sw *statusWriter) Patch(ctx context.Context, obj runtime.Object, patch Patch, opts ...PatchOption) error {
 	defer sw.client.resetGroupVersionKind(obj, obj.GetObjectKind().GroupVersionKind())
 	switch obj.(type) {
 	case *unstructured.Unstructured:

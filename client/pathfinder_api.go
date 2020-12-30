@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"log"
 	"reflect"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,16 +49,18 @@ func (pfv1 PathFinderV1Impl) List(ctx context.Context, pathfinderList *v1.PathFi
 	if err != nil {
 		return err
 	}
-	filted := utils.Filter(
-		pathfinderList.Items,
-		func(l interface{}) bool { return l.(v1.PathFinder).Spec.Region == opts.Region },
-		reflect.TypeOf(v1.PathFinder{}),
-	)
-	log.Println(filted)
-	pathfinderList.Items = make([]v1.PathFinder, len(filted))
-	for i := 0; i < len(filted); i++ {
-		pathfinderList.Items[i] = filted[i].(v1.PathFinder)
+	if len(opts.Region) > 0 {
+		filted := utils.Filter(
+			pathfinderList.Items,
+			func(l interface{}) bool { return l.(v1.PathFinder).Spec.Region == opts.Region },
+			reflect.TypeOf(v1.PathFinder{}),
+		)
+		pathfinderList.Items = make([]v1.PathFinder, len(filted))
+		for i := 0; i < len(filted); i++ {
+			pathfinderList.Items[i] = filted[i].(v1.PathFinder)
+		}
 	}
+
 	return err
 }
 
