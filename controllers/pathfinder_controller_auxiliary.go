@@ -69,11 +69,18 @@ func BuildURLFromService(service *corev1.Service, port int32) string {
 }
 
 // CleanUpServices Clean up deleted services
+// Service entries are cleaned up if:
+// 1. The service has been deleted, that is for service entry svc-a/admin-server and svc-a/debug, if
+// 		svc-a has been removed from k8s, then both of them are removed
+// 2. The port with corresponding name has been removed or renamed.
 func (r *PathFinderReconciler) CleanUpServices(pf *v1.PathFinder, svcs []corev1.Service) {
 	cleanUpPorts(pf, svcs)
 }
 
 // UpdatePathFinderWithService update pathfinder resource given verified service
+// Service entries are updated if:
+// 1. The address of service entry is modified
+// 2. New service entries are found
 func (r *PathFinderReconciler) UpdatePathFinderWithService(pf *v1.PathFinder, svc *corev1.Service) {
 
 	if len(svc.Spec.Ports) == 0 {
