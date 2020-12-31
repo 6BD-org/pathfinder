@@ -26,25 +26,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/consts"
 	"github.com/6BD-org/pathfinder/messages"
 	"github.com/6BD-org/pathfinder/utils"
 )
 
 const (
 	// PathFinderAnnotationKey should present if a service need pathfinder discovery feature
-	PathFinderAnnotationKey = "XM-PathFinder-Service"
+	PathFinderAnnotationKey              = "XM-PathFinder-Service"
+	PathFinderRegionKey                  = "XM-PathFinder-Region"
+	PathFinderServiceRegistrationNameKey = "XM-PathFinder-ServiceName"
 
 	// PathFinderActivated indicates that this service is ready for discovery
 	PathFinderActivated = "Activated"
-
 	// PathFinderDeactiveted indicates that this service is hidden from discovery
-	PathFinderDeactiveted = "Deactivated"
-
-	PathFinderRegionKey = "XM-PathFinder-Region"
-
+	PathFinderDeactiveted   = "Deactivated"
 	PathFinderDefaultRegion = "DEFAULT"
-
-	PathFinderServiceRegistrationNameKey = "XM-PathFinder-ServiceName"
 )
 
 // PathFinderReconciler reconciles a PathFinder object
@@ -62,50 +59,60 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	_ = context.Background()
 	_ = r.Log.WithValues("pathfinder", req.NamespacedName)
 
+	svcMap := make(map[string][]corev1.Service)
+
 	serviceList := r.ListServices(req.Namespace)
-	for _, s := range serviceList.Items {
-		annotations := s.Annotations
-		pathFinderState, ok := annotations[PathFinderAnnotationKey]
-		if ok && pathFinderState == PathFinderActivated {
-			region, ok := annotations[PathFinderRegionKey]
-			if !ok {
-				r.Log.Info("Region unspecified, will use default", "service", s.Name, "namespace", s.Namespace)
-				region = PathFinderDefaultRegion
-			}
-			_, ok = annotations[PathFinderServiceRegistrationNameKey]
-			if !ok {
-				r.Log.Error(nil, messages.ServiceNameUnspecified)
-			}
-			pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
-			if err != nil {
-				r.Log.Error(err, "Unable to find region")
-			} else {
 
-				// Do registrations
-				r.UpdatePathFinderWithService(pathFinderRegion, &s)
-				r.Log.Info("Updating pathfinder")
-				err = r.Update(context.TODO(), pathFinderRegion)
+	for _, svc := range serviceList.Items {
+		region := svcRegion(svc)
+		_, ok := svcMap[region]
+		if !ok {
+			svcMap[region] = make([]corev1.Service, 0)
+		}
+		svcMap[svcRegion(svc)] = append(svcMap[svcRegion(svc)], svc)
+	}
 
-				utils.CheckErr(err, "Error updating", r.Log)
+	for region := range svcMap {
+		svcs, ok := svcMap[region]
+		pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
+		if err != nil {
+			continue
+		}
+		if ok {
+			for _, s := range svcs {
+				annotations := s.Annotations
+				pathFinderState, ok := annotations[PathFinderAnnotationKey]
+				if ok && pathFinderState == PathFinderActivated {
+					if !ok {
+						r.Log.Info(consts.WARN_REGION_UNSPECIFIED, "service", s.Name, "namespace", s.Namespace)
+						region = PathFinderDefaultRegion
+					}
+					_, ok = annotations[PathFinderServiceRegistrationNameKey]
+					if !ok {
+						r.Log.Error(nil, messages.ServiceNameUnspecified)
+					}
+
+					if err != nil {
+						r.Log.Info(consts.WARN_REGION_NOT_FOUND, "service", s.Name, "namespace", s.Namespace)
+					} else {
+
+						// Do registrations
+						r.UpdatePathFinderWithService(pathFinderRegion, &s)
+						r.Log.Info(consts.INFO_UPDATINGPATHFINDER)
+
+						utils.CheckErr(err, consts.ERR_UPDATE_FAIL, r.Log)
+					}
+
+				}
 			}
-
+			r.CleanUpServices(pathFinderRegion, svcs)
+			err = r.Update(context.TODO(), pathFinderRegion)
+			utils.CheckErr(err, consts.ERR_LIST_PATHFINDER, r.Log)
 		}
 
 	}
-	return ctrl.Result{}, nil
-}
 
-func (r *PathFinderReconciler) CheckDefaultRegion(req ctrl.Request) {
-	ns := req.Namespace
-	_, err := r.GetDefaultPathFinderRegion(ns)
-	if err != nil {
-		// Default region does not exists, create one
-		pf := v1.PathFinder{}
-		pf.Spec.Region = PathFinderDefaultRegion
-		pf.ObjectMeta.Name = "pathfinder-default"
-		pf.ObjectMeta.Namespace = req.Namespace
-		r.Client.Create(context.TODO(), &pf, &client.CreateOptions{})
-	}
+	return ctrl.Result{}, nil
 }
 
 func (r *PathFinderReconciler) SetupWithManager(mgr ctrl.Manager) error {

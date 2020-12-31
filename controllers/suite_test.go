@@ -17,7 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	"log"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -31,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	pathfinderv1 "github.com/6BD-org/pathfinder/api/v1"
+	v1 "github.com/6BD-org/pathfinder/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -79,3 +82,7 @@ var _ = AfterSuite(func() {
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })
+
+func TestType(t *testing.T) {
+	log.Println(reflect.TypeOf(v1.ServiceEntry{}))
+}
