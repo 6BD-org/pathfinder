@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"log"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/consts"
 	"github.com/6BD-org/pathfinder/messages"
 	"github.com/6BD-org/pathfinder/utils"
 )
@@ -59,49 +59,9 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	_ = context.Background()
 	_ = r.Log.WithValues("pathfinder", req.NamespacedName)
 
-	serviceList := r.ListServices(req.Namespace)
-	for _, s := range serviceList.Items {
-		annotations := s.Annotations
-		pathFinderState, ok := annotations[PathFinderAnnotationKey]
-		if ok && pathFinderState == PathFinderActivated {
-			region, ok := annotations[PathFinderRegionKey]
-			if !ok {
-				r.Log.Info("Region unspecified, will use default", "service", s.Name, "namespace", s.Namespace)
-				region = PathFinderDefaultRegion
-			}
-			_, ok = annotations[PathFinderServiceRegistrationNameKey]
-			if !ok {
-				r.Log.Error(nil, messages.ServiceNameUnspecified)
-			}
-			pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
-			if err != nil {
-				r.Log.Error(err, "Unable to find region")
-			} else {
-
-				// Do registrations
-				r.UpdatePathFinderWithService(pathFinderRegion, &s)
-				r.Log.Info("Updating pathfinder")
-				err = r.Update(context.TODO(), pathFinderRegion)
-
-				utils.CheckErr(err, "Error updating", r.Log)
-			}
-
-		}
-
-	}
-
-	log.Println("Start cleaning up")
-
 	svcMap := make(map[string][]corev1.Service)
-	pfMap := make(map[string]v1.PathFinder)
 
-	pfs, err := r.ListPathFinders(req.Namespace)
-	if err != nil {
-		log.Println("Error: ", err)
-	}
-	for _, pf := range pfs.Items {
-		pfMap[pf.Spec.Region] = pf
-	}
+	serviceList := r.ListServices(req.Namespace)
 
 	for _, svc := range serviceList.Items {
 		region := svcRegion(svc)
@@ -112,16 +72,46 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		svcMap[svcRegion(svc)] = append(svcMap[svcRegion(svc)], svc)
 	}
 
-	for region := range pfMap {
-		pf, _ := pfMap[region]
+	for region := range svcMap {
 		svcs, ok := svcMap[region]
+		pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
+		if err != nil {
+			continue
+		}
 		if ok {
-			r.CleanUpServices(&pf, svcs)
-		} else {
-			log.Println("No service found for region: ", region)
+			for _, s := range svcs {
+				annotations := s.Annotations
+				pathFinderState, ok := annotations[PathFinderAnnotationKey]
+				if ok && pathFinderState == PathFinderActivated {
+					if !ok {
+						r.Log.Info(consts.WARN_REGION_UNSPECIFIED, "service", s.Name, "namespace", s.Namespace)
+						region = PathFinderDefaultRegion
+					}
+					_, ok = annotations[PathFinderServiceRegistrationNameKey]
+					if !ok {
+						r.Log.Error(nil, messages.ServiceNameUnspecified)
+					}
+
+					if err != nil {
+						r.Log.Info(consts.WARN_REGION_NOT_FOUND, "service", s.Name, "namespace", s.Namespace)
+					} else {
+
+						// Do registrations
+						r.UpdatePathFinderWithService(pathFinderRegion, &s)
+						r.Log.Info(consts.INFO_UPDATINGPATHFINDER)
+
+						utils.CheckErr(err, consts.ERR_UPDATE_FAIL, r.Log)
+					}
+
+				}
+			}
+			r.CleanUpServices(pathFinderRegion, svcs)
+			err = r.Update(context.TODO(), pathFinderRegion)
+			utils.CheckErr(err, consts.ERR_LIST_PATHFINDER, r.Log)
 		}
 
 	}
+
 	return ctrl.Result{}, nil
 }
 

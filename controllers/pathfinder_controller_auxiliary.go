@@ -87,7 +87,7 @@ func (r *PathFinderReconciler) UpdatePathFinderWithService(pf *v1.PathFinder, sv
 }
 
 func (r *PathFinderReconciler) updatePf(pf *v1.PathFinder, svc *corev1.Service, port corev1.ServicePort) {
-	serviceName, _ := svc.Annotations[PathFinderServiceRegistrationNameKey]
+	serviceName := svcRegistractionName(*svc)
 	serviceName = formatServiceName(serviceName, port.Name)
 	existing, ok := pf.Status.FindServiceEntry(serviceName)
 	if !ok {
@@ -118,7 +118,7 @@ func cleanUpPorts(pf *v1.PathFinder, svcs []corev1.Service) {
 	entries := utils.Filter(
 		pf.Status.ServiceEntries,
 		func(e interface{}) bool {
-			return toRemove(e.(v1.ServiceEntry), svcs)
+			return !toRemove(e.(v1.ServiceEntry), svcs)
 		},
 		reflect.TypeOf(v1.ServiceEntry{}),
 	)
@@ -144,22 +144,18 @@ func toRemove(entry v1.ServiceEntry, svcs []corev1.Service) bool {
 	}
 
 	if !serviceFound {
-		return false
+		return true
 	}
 
 	res := true
-	if svcName != svc.Annotations[PathFinderServiceRegistrationNameKey] {
-		// From different service, don't remove
-		return false
-	} else {
-		for _, p := range svc.Spec.Ports {
-			if portName == p.Name {
-				res = false
-			}
+
+	for _, p := range svc.Spec.Ports {
+		if portName == p.Name {
+			res = false
 		}
-		// Remove if from same service and port not found
-		return res
 	}
+	// Remove if from same service and port not found
+	return res
 
 }
 
@@ -183,5 +179,9 @@ func formatServiceName(service string, portName string) string {
 }
 
 func svcRegion(svc corev1.Service) string {
+	return svc.Annotations[PathFinderRegionKey]
+}
+
+func svcRegistractionName(svc corev1.Service) string {
 	return svc.Annotations[PathFinderServiceRegistrationNameKey]
 }
