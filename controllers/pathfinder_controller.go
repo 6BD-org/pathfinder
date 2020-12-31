@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"log"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -92,20 +93,40 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 
 	}
-	return ctrl.Result{}, nil
-}
 
-func (r *PathFinderReconciler) CheckDefaultRegion(req ctrl.Request) {
-	ns := req.Namespace
-	_, err := r.GetDefaultPathFinderRegion(ns)
+	log.Println("Start cleaning up")
+
+	svcMap := make(map[string][]corev1.Service)
+	pfMap := make(map[string]v1.PathFinder)
+
+	pfs, err := r.ListPathFinders(req.Namespace)
 	if err != nil {
-		// Default region does not exists, create one
-		pf := v1.PathFinder{}
-		pf.Spec.Region = PathFinderDefaultRegion
-		pf.ObjectMeta.Name = "pathfinder-default"
-		pf.ObjectMeta.Namespace = req.Namespace
-		r.Client.Create(context.TODO(), &pf, &client.CreateOptions{})
+		log.Println("Error: ", err)
 	}
+	for _, pf := range pfs.Items {
+		pfMap[pf.Spec.Region] = pf
+	}
+
+	for _, svc := range serviceList.Items {
+		region := svcRegion(svc)
+		_, ok := svcMap[region]
+		if !ok {
+			svcMap[region] = make([]corev1.Service, 0)
+		}
+		svcMap[svcRegion(svc)] = append(svcMap[svcRegion(svc)], svc)
+	}
+
+	for region := range pfMap {
+		pf, _ := pfMap[region]
+		svcs, ok := svcMap[region]
+		if ok {
+			r.CleanUpServices(&pf, svcs)
+		} else {
+			log.Println("No service found for region: ", region)
+		}
+
+	}
+	return ctrl.Result{}, nil
 }
 
 func (r *PathFinderReconciler) SetupWithManager(mgr ctrl.Manager) error {

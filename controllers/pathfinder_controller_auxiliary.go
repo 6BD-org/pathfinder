@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
 	"github.com/6BD-org/pathfinder/messages"
@@ -40,6 +41,14 @@ func (r *PathFinderReconciler) GetPathFinderRegion(namespace string, region stri
 
 }
 
+func (r *PathFinderReconciler) ListPathFinders(namespace string) (*v1.PathFinderList, error) {
+	pl := v1.PathFinderList{}
+	if err := r.List(context.TODO(), &pl, client.InNamespace(namespace)); err != nil {
+		return nil, err
+	}
+	return &pl, nil
+}
+
 // GetDefaultPathFinderRegion get default region
 func (r *PathFinderReconciler) GetDefaultPathFinderRegion(namespace string) (*v1.PathFinder, error) {
 	p, err := r.GetPathFinderRegion(namespace, PathFinderDefaultRegion)
@@ -57,6 +66,11 @@ func (r *PathFinderReconciler) ListServices(namespace string) *corev1.ServiceLis
 //BuildURLFromService build a domain name from a service
 func BuildURLFromService(service *corev1.Service, port int32) string {
 	return fmt.Sprintf("%s.%s.svc:%v", service.Namespace, service.Name, port)
+}
+
+// CleanUpServices Clean up deleted services
+func (r *PathFinderReconciler) CleanUpServices(pf *v1.PathFinder, svcs []corev1.Service) {
+	cleanUpPorts(pf, svcs)
 }
 
 // UpdatePathFinderWithService update pathfinder resource given verified service
@@ -94,9 +108,80 @@ func (r *PathFinderReconciler) updatePf(pf *v1.PathFinder, svc *corev1.Service, 
 			existing.ServiceHost = BuildURLFromService(svc, port.Port)
 			existing.Payload.KeyValPairs = []v1.PayloadKeyValPair{}
 		}
+
 	}
 }
 
+// cleanUp port entries that are nolonger in service
+func cleanUpPorts(pf *v1.PathFinder, svcs []corev1.Service) {
+
+	entries := utils.Filter(
+		pf.Status.ServiceEntries,
+		func(e interface{}) bool {
+			return toRemove(e.(v1.ServiceEntry), svcs)
+		},
+		reflect.TypeOf(v1.ServiceEntry{}),
+	)
+
+	pf.Status.ServiceEntries = make([]v1.ServiceEntry, len(entries))
+	for i, v := range entries {
+		pf.Status.ServiceEntries[i] = v.(v1.ServiceEntry)
+	}
+
+}
+
+// TODO: Improve lookup efficiency
+func toRemove(entry v1.ServiceEntry, svcs []corev1.Service) bool {
+	var svc corev1.Service
+	svcName, portName := deformatServiceName(entry.ServiceName)
+
+	serviceFound := false
+	for _, svc = range svcs {
+		if svc.Name == svcName {
+			serviceFound = true
+			break
+		}
+	}
+
+	if !serviceFound {
+		return false
+	}
+
+	res := true
+	if svcName != svc.Annotations[PathFinderServiceRegistrationNameKey] {
+		// From different service, don't remove
+		return false
+	} else {
+		for _, p := range svc.Spec.Ports {
+			if portName == p.Name {
+				res = false
+			}
+		}
+		// Remove if from same service and port not found
+		return res
+	}
+
+}
+
+func deformatServiceName(entryServiceName string) (string, string) {
+	sp := strings.Split(entryServiceName, "/")
+	if len(sp) == 0 {
+		return "", ""
+	}
+	if len(sp) == 1 {
+		return sp[0], ""
+	}
+	return sp[0], sp[1]
+
+}
+
 func formatServiceName(service string, portName string) string {
+	if len(portName) == 0 {
+		return service
+	}
 	return fmt.Sprintf("%s/%s", service, portName)
+}
+
+func svcRegion(svc corev1.Service) string {
+	return svc.Annotations[PathFinderServiceRegistrationNameKey]
 }
