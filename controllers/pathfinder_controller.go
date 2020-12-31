@@ -33,19 +33,15 @@ import (
 
 const (
 	// PathFinderAnnotationKey should present if a service need pathfinder discovery feature
-	PathFinderAnnotationKey = "XM-PathFinder-Service"
+	PathFinderAnnotationKey              = "XM-PathFinder-Service"
+	PathFinderRegionKey                  = "XM-PathFinder-Region"
+	PathFinderServiceRegistrationNameKey = "XM-PathFinder-ServiceName"
 
 	// PathFinderActivated indicates that this service is ready for discovery
 	PathFinderActivated = "Activated"
-
 	// PathFinderDeactiveted indicates that this service is hidden from discovery
-	PathFinderDeactiveted = "Deactivated"
-
-	PathFinderRegionKey = "XM-PathFinder-Region"
-
+	PathFinderDeactiveted   = "Deactivated"
 	PathFinderDefaultRegion = "DEFAULT"
-
-	PathFinderServiceRegistrationNameKey = "XM-PathFinder-ServiceName"
 )
 
 // PathFinderReconciler reconciles a PathFinder object
