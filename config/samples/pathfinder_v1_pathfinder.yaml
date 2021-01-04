@@ -1,8 +1,8 @@
 apiVersion: pathfinder.xmbsmdsj.com/v1
 kind: PathFinder
 metadata:
-  name: pathfinder-sample
+  name: pathfinder-sample-2
+  namespace: makaveli
 spec:
   # Add fields here
-  foo: bar
   region: DEFAULT

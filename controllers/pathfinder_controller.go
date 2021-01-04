@@ -18,8 +18,10 @@ package controllers
 
 import (
 	"context"
+	"log"
 
 	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -27,8 +29,6 @@ import (
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
 	"github.com/6BD-org/pathfinder/consts"
-	"github.com/6BD-org/pathfinder/messages"
-	"github.com/6BD-org/pathfinder/utils"
 )
 
 const (
@@ -52,6 +52,7 @@ type PathFinderReconciler struct {
 }
 
 // +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 // +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders/status,verbs=get;update;patch
 
 // Reconcile is the main logic of interpreting PathFinder CRDs
@@ -64,50 +65,37 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	serviceList := r.ListServices(req.Namespace)
 
 	for _, svc := range serviceList.Items {
-		region := svcRegion(svc)
+		enabled := verify(&svc)
+		if !enabled {
+			continue
+		}
+		region, _ := svcRegion(svc)
 		_, ok := svcMap[region]
 		if !ok {
 			svcMap[region] = make([]corev1.Service, 0)
 		}
-		svcMap[svcRegion(svc)] = append(svcMap[svcRegion(svc)], svc)
+		svcMap[region] = append(svcMap[region], svc)
+
 	}
 
 	for region := range svcMap {
 		svcs, ok := svcMap[region]
 		pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
 		if err != nil {
+			r.Log.Error(err, consts.ERR_GET_PATHFINDER_REGION, "msg", err.Error())
 			continue
 		}
 		if ok {
-			for _, s := range svcs {
-				annotations := s.Annotations
-				pathFinderState, ok := annotations[PathFinderAnnotationKey]
-				if ok && pathFinderState == PathFinderActivated {
-					if !ok {
-						r.Log.Info(consts.WARN_REGION_UNSPECIFIED, "service", s.Name, "namespace", s.Namespace)
-						region = PathFinderDefaultRegion
-					}
-					_, ok = annotations[PathFinderServiceRegistrationNameKey]
-					if !ok {
-						r.Log.Error(nil, messages.ServiceNameUnspecified)
-					}
-
-					if err != nil {
-						r.Log.Info(consts.WARN_REGION_NOT_FOUND, "service", s.Name, "namespace", s.Namespace)
-					} else {
-
-						// Do registrations
-						r.UpdatePathFinderWithService(pathFinderRegion, &s)
-						r.Log.Info(consts.INFO_UPDATINGPATHFINDER)
-
-						utils.CheckErr(err, consts.ERR_UPDATE_FAIL, r.Log)
-					}
-
-				}
+			r.RebuildPathfinderRegion(pathFinderRegion, svcs)
+			log.Println(pathFinderRegion)
+			err := r.Update(context.TODO(), pathFinderRegion)
+			if err != nil {
+				r.Log.Error(
+					errors.Errorf(consts.ERR_UPDATE_FAIL),
+					consts.ERR_UPDATE_FAIL,
+					"msg", err.Error(),
+				)
 			}
-			r.CleanUpServices(pathFinderRegion, svcs)
-			err = r.Update(context.TODO(), pathFinderRegion)
-			utils.CheckErr(err, consts.ERR_LIST_PATHFINDER, r.Log)
 		}
 
 	}

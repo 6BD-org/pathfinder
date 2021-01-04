@@ -17,14 +17,22 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
+	"github.com/6BD-org/pathfinder/consts"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
 var pathfinderlog = logf.Log.WithName("pathfinder-resource")
+var k8sClient client.Client
+var hookScheme = runtime.NewScheme()
 
 func (r *PathFinder) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -53,16 +61,17 @@ var _ webhook.Validator = &PathFinder{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *PathFinder) ValidateCreate() error {
 	pathfinderlog.Info("validate create", "name", r.Name)
-
 	// TODO(user): fill in your validation logic upon object creation.
+	err := r.CheckDuplication()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *PathFinder) ValidateUpdate(old runtime.Object) error {
-	pathfinderlog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
+	// TODO Optimize duplication check
 	return nil
 }
 
@@ -71,5 +80,48 @@ func (r *PathFinder) ValidateDelete() error {
 	pathfinderlog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil
+}
+
+// CheckDuplication Check duplicated pathfinder in same namespace and same region
+func (r *PathFinder) CheckDuplication() error {
+	pfl := PathFinderList{}
+	err := getClient().List(context.TODO(), &pfl, client.InNamespace(r.Namespace))
+	if err != nil {
+		return err
+	}
+	for _, pf := range pfl.Items {
+		if pf.Spec.Region == r.Spec.Region {
+			return errors.Errorf("Duplicated pathfinder in same region")
+		}
+	}
+	return nil
+}
+
+func getClient() client.Client {
+	var err error
+	if k8sClient == nil {
+		k8sClient, err = client.New(ctrl.GetConfigOrDie(), client.Options{
+			Scheme: hookScheme,
+		})
+		if err != nil {
+			panic(err)
+		}
+		return k8sClient
+	} else {
+		return k8sClient
+	}
+
+}
+
+func init() {
+	var err error
+
+	_ = clientgoscheme.AddToScheme(hookScheme)
+	_ = AddToScheme(hookScheme)
+
+	if err != nil {
+		pathfinderlog.Error(err, consts.ERR_WEBHOOK_INIT_FAIL)
+	}
 }
