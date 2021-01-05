@@ -1,0 +1,401 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+    xmbsmdsj.com/manager: pathfinder
+  name: kube-system
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/pathfinder-serving-cert
+    controller-gen.kubebuilder.io/version: v0.2.5
+  name: pathfinders.pathfinder.xmbsmdsj.com
+spec:
+  conversion:
+    strategy: Webhook
+    webhookClientConfig:
+      caBundle: Cg==
+      service:
+        name: pathfinder-webhook-service
+        namespace: kube-system
+        path: /convert
+  group: pathfinder.xmbsmdsj.com
+  names:
+    kind: PathFinder
+    listKind: PathFinderList
+    plural: pathfinders
+    singular: pathfinder
+  preserveUnknownFields: false
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      description: PathFinder is the Schema for the pathfinders API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: PathFinderSpec defines the desired state of PathFinder
+          properties:
+            clusterDomain:
+              description: Foo is an example field of PathFinder. Edit PathFinder_types.go to remove/update
+              type: string
+            region:
+              type: string
+          required:
+          - region
+          type: object
+        status:
+          description: PathFinderStatus defines the observed state of PathFinder
+          properties:
+            serviceEntries:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run "make" to regenerate code after modifying this file'
+              items:
+                description: ServiceEntry is one single entry for a service, which may contain multiple hosts
+                properties:
+                  payload:
+                    description: Payload carries extra information of a service
+                    properties:
+                      keyValPairs:
+                        items:
+                          description: PayloadKeyValPair organizes extra service information as key-value pairs
+                          properties:
+                            key:
+                              type: string
+                            val:
+                              type: string
+                          required:
+                          - key
+                          - val
+                          type: object
+                        type: array
+                    required:
+                    - keyValPairs
+                    type: object
+                  serviceHosts:
+                    type: string
+                  serviceName:
+                    type: string
+                required:
+                - serviceHosts
+                - serviceName
+                type: object
+              type: array
+          type: object
+      type: object
+  version: v1
+  versions:
+  - name: v1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pathfinder-leader-election-role
+  namespace: kube-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: pathfinder-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - service
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pathfinder.xmbsmdsj.com
+  resources:
+  - pathfinders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - pathfinder.xmbsmdsj.com
+  resources:
+  - pathfinders/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: pathfinder-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: pathfinder-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: pathfinder-leader-election-rolebinding
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: pathfinder-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pathfinder-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pathfinder-manager-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: pathfinder-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: pathfinder-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: pathfinder-controller-manager-metrics-service
+  namespace: kube-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pathfinder-webhook-service
+  namespace: kube-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+    xmbsmdsj.com/manager: pathfinder
+  name: pathfinder-controller-manager
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+      xmbsmdsj.com/manager: pathfinder
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+        xmbsmdsj.com/manager: pathfinder
+    spec:
+      containers:
+      - args:
+        - --metrics-addr=127.0.0.1:8080
+        - --enable-leader-election
+        command:
+        - /manager
+        image: wylswz/pathfinder:test
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=10
+        image: wylswz/kube-rbac-proxy:0.8.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: pathfinder-serving-cert
+  namespace: kube-system
+spec:
+  dnsNames:
+  - pathfinder-webhook-service.kube-system.svc
+  - pathfinder-webhook-service.kube-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: pathfinder-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: pathfinder-selfsigned-issuer
+  namespace: kube-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/pathfinder-serving-cert
+  name: pathfinder-mutating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: pathfinder-webhook-service
+      namespace: kube-system
+      path: /mutate-pathfinder-xmbsmdsj-com-v1-pathfinder
+  failurePolicy: Fail
+  name: mpathfinder.kb.io
+  rules:
+  - apiGroups:
+    - pathfinder.xmbsmdsj.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pathfinders
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: kube-system/pathfinder-serving-cert
+  name: pathfinder-validating-webhook-configuration
+webhooks:
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: pathfinder-webhook-service
+      namespace: kube-system
+      path: /validate-pathfinder-xmbsmdsj-com-v1-pathfinder
+  failurePolicy: Fail
+  name: vpathfinder.kb.io
+  rules:
+  - apiGroups:
+    - pathfinder.xmbsmdsj.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pathfinders
