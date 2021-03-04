@@ -72,6 +72,16 @@ func (r *PathFinder) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
 func (r *PathFinder) ValidateUpdate(old runtime.Object) error {
 	// TODO Optimize duplication check
+	oldPf := PathFinder{}
+	err := hookScheme.Convert(&old, &oldPf, context.Background())
+	if err != nil {
+		return err
+	}
+
+	if oldPf.Spec.Region != r.Spec.Region {
+		return r.CheckDuplication()
+	}
+
 	return nil
 }
 

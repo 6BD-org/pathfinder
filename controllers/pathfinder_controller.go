@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"context"
-	"log"
+	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -81,20 +81,23 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 	for region := range svcMap {
 		svcs, ok := svcMap[region]
 		pathFinderRegion, err := r.GetPathFinderRegion(req.Namespace, region)
+		oldPathFinderRegion := pathFinderRegion.DeepCopy()
+
 		if err != nil {
 			r.Log.Error(err, consts.ERR_GET_PATHFINDER_REGION, "msg", err.Error())
 			continue
 		}
 		if ok {
 			r.RebuildPathfinderRegion(pathFinderRegion, svcs)
-			log.Println(pathFinderRegion)
-			err := r.Update(context.TODO(), pathFinderRegion)
-			if err != nil {
-				r.Log.Error(
-					errors.Errorf(consts.ERR_UPDATE_FAIL),
-					consts.ERR_UPDATE_FAIL,
-					"msg", err.Error(),
-				)
+			if reflect.DeepEqual(pathFinderRegion, oldPathFinderRegion) {
+				err := r.Update(context.TODO(), pathFinderRegion)
+				if err != nil {
+					r.Log.Error(
+						errors.Errorf(consts.ERR_UPDATE_FAIL),
+						consts.ERR_UPDATE_FAIL,
+						"msg", err.Error(),
+					)
+				}
 			}
 		}
 
