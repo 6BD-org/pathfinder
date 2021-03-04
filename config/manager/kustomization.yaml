@@ -5,6 +5,6 @@ kind: Kustomization
 images:
 - name: controller
   newName: wylswz/pathfinder
-  newTag: test
+  newTag: 0.1.0
 commonLabels:
   xmbsmdsj.com/manager: pathfinder
