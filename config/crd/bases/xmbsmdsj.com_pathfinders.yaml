@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.5
   creationTimestamp: null
-  name: pathfinders.pathfinder.xmbsmdsj.com
+  name: pathfinders.xmbsmdsj.com
 spec:
-  group: pathfinder.xmbsmdsj.com
+  group: xmbsmdsj.com
   names:
     kind: PathFinder
     listKind: PathFinderList

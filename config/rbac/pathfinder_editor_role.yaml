@@ -5,7 +5,7 @@ metadata:
   name: pathfinder-editor-role
 rules:
 - apiGroups:
-  - pathfinder.xmbsmdsj.com
+  - xmbsmdsj.com
   resources:
   - pathfinders
   verbs:
@@ -17,7 +17,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pathfinder.xmbsmdsj.com
+  - xmbsmdsj.com
   resources:
   - pathfinders/status
   verbs:

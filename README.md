@@ -61,7 +61,7 @@ After that, you can deploy path finder in namespace to make it work
 ### Step 1: Deploy CRD to your cluster
 
 ```
-kubectl apply -f ./config/crd/bases/pathfinder.xmbsmdsj.com_pathfinders.yaml
+kubectl apply -f ./config/crd/bases/xmbsmdsj.com_pathfinders.yaml
 ```
 
 ### Step 2: Build image for pathfinder controller

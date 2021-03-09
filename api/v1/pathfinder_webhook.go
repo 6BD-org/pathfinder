@@ -42,7 +42,7 @@ func (r *PathFinder) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-pathfinder-xmbsmdsj-com-v1-pathfinder,mutating=true,failurePolicy=fail,groups=pathfinder.xmbsmdsj.com,resources=pathfinders,verbs=create;update,versions=v1,name=mpathfinder.kb.io
+// +kubebuilder:webhook:path=/mutate-pathfinder-xmbsmdsj-com-v1-pathfinder,mutating=true,failurePolicy=fail,groups=xmbsmdsj.com,resources=pathfinders,verbs=create;update,versions=v1,name=mpathfinder.kb.io
 
 var _ webhook.Defaulter = &PathFinder{}
 
@@ -54,7 +54,7 @@ func (r *PathFinder) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-pathfinder-xmbsmdsj-com-v1-pathfinder,mutating=false,failurePolicy=fail,groups=pathfinder.xmbsmdsj.com,resources=pathfinders,versions=v1,name=vpathfinder.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-pathfinder-xmbsmdsj-com-v1-pathfinder,mutating=false,failurePolicy=fail,groups=xmbsmdsj.com,resources=pathfinders,versions=v1,name=vpathfinder.kb.io
 
 var _ webhook.Validator = &PathFinder{}
 

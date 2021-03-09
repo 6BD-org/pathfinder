@@ -51,9 +51,9 @@ type PathFinderReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=xmbsmdsj.com,resources=pathfinders,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
-// +kubebuilder:rbac:groups=pathfinder.xmbsmdsj.com,resources=pathfinders/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=xmbsmdsj.com,resources=pathfinders/status,verbs=get;update;patch
 
 // Reconcile is the main logic of interpreting PathFinder CRDs
 func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
