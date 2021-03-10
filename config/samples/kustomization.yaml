@@ -1,2 +1,4 @@
+namespace: test
 resources:
   - pathfinder_v1_pathfinder.yaml
+  - sample-app.yaml

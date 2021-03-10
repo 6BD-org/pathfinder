@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -89,7 +88,7 @@ func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		}
 		if ok {
 			r.RebuildPathfinderRegion(pathFinderRegion, svcs)
-			if reflect.DeepEqual(pathFinderRegion, oldPathFinderRegion) {
+			if r.shouldUpdate(oldPathFinderRegion, pathFinderRegion) {
 				err := r.Update(context.TODO(), pathFinderRegion)
 				if err != nil {
 					r.Log.Error(

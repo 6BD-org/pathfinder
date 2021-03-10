@@ -11,7 +11,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-pathfinder-xmbsmdsj-com-v1-pathfinder
+      path: /mutate-xmbsmdsj-com-v1-pathfinder
   failurePolicy: Fail
   name: mpathfinder.kb.io
   rules:
@@ -37,7 +37,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-pathfinder-xmbsmdsj-com-v1-pathfinder
+      path: /validate-xmbsmdsj-com-v1-pathfinder
   failurePolicy: Fail
   name: vpathfinder.kb.io
   rules:

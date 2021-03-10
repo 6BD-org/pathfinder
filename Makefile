@@ -37,6 +37,9 @@ uninstall: manifests
 deploy-cert:
 	kustomize build config/third-party | kubectl create -f -
 
+deploy-sample:
+	kustomize build config/samples/ | kubectl apply -f -
+
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
 	cd config/manager && kustomize edit set image controller=${IMG}
