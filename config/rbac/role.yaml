@@ -15,7 +15,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - pathfinder.xmbsmdsj.com
+  - xmbsmdsj.com
   resources:
   - pathfinders
   verbs:
@@ -27,7 +27,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - pathfinder.xmbsmdsj.com
+  - xmbsmdsj.com
   resources:
   - pathfinders/status
   verbs:

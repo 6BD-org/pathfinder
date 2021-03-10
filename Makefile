@@ -29,10 +29,16 @@ run: generate fmt vet manifests
 # Install CRDs into a cluster
 install: manifests
 	kustomize build config/crd | kubectl apply -f -
-
 # Uninstall CRDs from a cluster
 uninstall: manifests
 	kustomize build config/crd | kubectl delete -f -
+
+# Create third party resources if not exists
+deploy-cert:
+	kustomize build config/third-party | kubectl create -f -
+
+deploy-sample:
+	kustomize build config/samples/ | kubectl apply -f -
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
@@ -60,7 +66,7 @@ docker-build: test
 	sudo docker build . -t ${IMG}
 
 # Push the docker image
-docker-push:
+docker-push: docker-build
 	sudo docker push ${IMG}
 
 # find or download controller-gen

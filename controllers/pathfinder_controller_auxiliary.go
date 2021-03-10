@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
 	"github.com/6BD-org/pathfinder/common"
@@ -33,6 +34,11 @@ func (r *PathFinderReconciler) ListServices(namespace string) *corev1.ServiceLis
 	services := corev1.ServiceList{}
 	r.Client.List(context.TODO(), &services, client.InNamespace(namespace))
 	return &services
+}
+
+func (r *PathFinderReconciler) shouldUpdate(oldPf *v1.PathFinder, pf *v1.PathFinder) bool {
+	return (!reflect.DeepEqual(pf.Spec, oldPf.Spec)) ||
+		(!reflect.DeepEqual(pf.Status, oldPf.Status))
 }
 
 // RebuildPathfinderRegion Rebuild pathfinder from services from that region
@@ -68,7 +74,7 @@ func (r *PathFinderReconciler) RebuildPathfinderRegion(pf *v1.PathFinder, svcs [
 
 //BuildURLFromService build a domain name from a service
 func buildURLFromService(service corev1.Service, port int32) string {
-	return fmt.Sprintf("%s.%s.svc:%v", service.Namespace, service.Name, port)
+	return fmt.Sprintf("%s.%s.svc:%v", service.Name, service.Namespace, port)
 }
 
 func formatServiceName(service string, portName string) string {
