@@ -36,47 +36,34 @@ kubebuilder create api --group pathfinder --version v1 PathFinder
 ```
 
 
-Customize spec.
-
-Spec holds the desired state of a resource, in this case, we do not desire anything, but maintain a list of services.
-
-
-Build image 
-```bash
-make docker-build docker-push IMG={your_image}
-```
-
-Deploy the controller to kubernetes:
-
-```bash
-make deploy IMG={your_image}
-
-```
-
-After that, you can deploy path finder in namespace to make it work
-
-
 ## How to use? 
 
 ### Step 1: Deploy CRD to your cluster
 
-```
-kubectl apply -f ./config/crd/bases/xmbsmdsj.com_pathfinders.yaml
+```bash
+$ make install
 ```
 
 ### Step 2: Build image for pathfinder controller
 
-Already introduced above
 
-### Step 3: Deploy controller on cluster
+```bash
+$ make docker-push
+```
 
-Already introduced above
+### Step 3: Deploy third party components and pathfinder controller on cluster
 
-### Step 4: Deploy PathFinder in your namespace
+```bash
+# cert-manager is required for pathfinder to run
+$ make deploy-thirdparty
+$ make deploy
+```
+
+### Step 4: Deploy Sample
 
 ```bash
 
-kubectl -n your_ns apply -f ./config/samples/pathfinder_v1_pathfinder.yaml
+make deploy-sample
 
 ```
 
