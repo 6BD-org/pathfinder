@@ -7,6 +7,7 @@ import (
 
 	v1 "github.com/6BD-org/pathfinder/api/v1"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const config = "/home/transwarp/.kube/config"
@@ -42,4 +43,10 @@ func Test(t *testing.T) {
 		log.Fatal(err)
 	}
 	log.Println(pf)
+
+	pf.Annotations["a"] = "b"
+	err = pfclient.PathFinderV1(testNs).Update(context.TODO(), &pf, &client.UpdateOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }

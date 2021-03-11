@@ -85,3 +85,21 @@ metadata:
     XM-PathFinder-Service: Activated
     XM-PathFinder-ServiceName: my-svc
 ```
+
+## Use PathFinder client go
+
+It is pretty straitforward to access PathFinders using go client.
+
+```golang
+// You can either use config files to access remote cluster
+config, err := clientcmd.BuildConfigFromFlags("", config)
+
+// Or just use in-cluster setup if you are running your app
+// in k8s pod
+config, err := rest.InClusterConfig()
+
+// Create a pf client from kube config
+pfclient, err := client.New(config)
+
+// Perform your operations on pathfinder here
+```

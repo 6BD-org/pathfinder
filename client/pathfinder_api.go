@@ -25,26 +25,28 @@ type PathFinderKey struct {
 
 // PathFinderV1 is api interface for pathfinder v1
 type PathFinderV1 interface {
-	Create(ctx context.Context, pathfinder *v1.PathFinder, opts client.CreateOption) error
-	Delete(ctx context.Context, pathfinder *v1.PathFinder, opts client.DeleteOption) error
+	Create(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.CreateOption) error
+	Delete(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.DeleteOption) error
 	Get(ctx context.Context, name string, pathfinder *v1.PathFinder) error
 	GetByRegion(ctx context.Context, region string, pathfinder *v1.PathFinder) error
 	List(ctx context.Context, pathfinderList *v1.PathFinderList, opts PathFinderListOption) error
+	Update(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.UpdateOption) error
 }
 
+// PathFinderV1Impl Not for ploymorphism, but for parameter overview
 type PathFinderV1Impl struct {
 	client    client.Client
 	namespace string
 }
 
 // Create create a new pathfinder
-func (pfv1 PathFinderV1Impl) Create(ctx context.Context, pathfinder *v1.PathFinder, opts client.CreateOption) error {
-	return pfv1.client.Create(ctx, pathfinder, opts)
+func (pfv1 PathFinderV1Impl) Create(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.CreateOption) error {
+	return pfv1.client.Create(ctx, pathfinder, opts...)
 }
 
 // Delete a pathfinder from namespace
-func (pfv1 PathFinderV1Impl) Delete(ctx context.Context, pathfinder *v1.PathFinder, opts client.DeleteOption) error {
-	return pfv1.client.Delete(ctx, pathfinder, opts)
+func (pfv1 PathFinderV1Impl) Delete(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.DeleteOption) error {
+	return pfv1.client.Delete(ctx, pathfinder, opts...)
 
 }
 
@@ -102,6 +104,11 @@ func (pfv1 PathFinderV1Impl) List(ctx context.Context, pathfinderList *v1.PathFi
 	}
 
 	return err
+}
+
+// Update a pathfinder
+func (pfv1 PathFinderV1Impl) Update(ctx context.Context, pathfinder *v1.PathFinder, opts ...client.UpdateOption) error {
+	return pfv1.client.Update(ctx, pathfinder, opts...)
 }
 
 // NewPathFinderV1 Create a new pathfinder v1 api
