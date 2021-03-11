@@ -59,6 +59,7 @@ type PathFinderStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=pf;
 
 // PathFinder is the Schema for the pathfinders API
 type PathFinder struct {
