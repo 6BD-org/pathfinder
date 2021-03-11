@@ -19,15 +19,15 @@ package controllers
 import (
 	"context"
 
+	v1 "github.com/6BD-org/pathfinder/api/v1"
+	"github.com/6BD-org/pathfinder/consts"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	v1 "github.com/6BD-org/pathfinder/api/v1"
-	"github.com/6BD-org/pathfinder/consts"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
@@ -53,9 +53,10 @@ type PathFinderReconciler struct {
 // +kubebuilder:rbac:groups=xmbsmdsj.com,resources=pathfinders,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups="",resources=services,verbs=get;list;watch
 // +kubebuilder:rbac:groups=xmbsmdsj.com,resources=pathfinders/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is the main logic of interpreting PathFinder CRDs
-func (r *PathFinderReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *PathFinderReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("pathfinder", req.NamespacedName)
 
